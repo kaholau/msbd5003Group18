@@ -1,7 +1,7 @@
 import sys
 import math
 from pyspark import SparkContext
-import optics1
+import optics
 
 
 sc=SparkContext()
@@ -11,7 +11,7 @@ rdd = sc.parallelize(x, 2).cache()
 MIN_PTS_NUM = sc.broadcast(4)
 RADIUS = sc.broadcast(17)
 
-op = optics1.OPTICS(MIN_PTS_NUM,RADIUS)
+op = optics.OPTICS(MIN_PTS_NUM,RADIUS)
 result  = op.run(rdd)
 
 print result.take(12)
