@@ -17,7 +17,8 @@ class Point:
 		return
 
 	def __repr__(self):
-		return "[id:{},rD:{},cD:{},notC:{},optId:{},chk:{}]\n".format(self.id,self.reachDis,self.coreDis,self.opticsId,self.notCore,self.processed)
+		return "[id:{},rD:{},cD:{},optId:{},notC:{},chk:{}],\n"\
+		.format(self.id,self.reachDis,self.coreDis,self.opticsId,self.notCore,self.processed)
 
 class OPTICS:
 	MIN_PTS_NUM = 0
