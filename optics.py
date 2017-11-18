@@ -2,7 +2,10 @@ import sys
 import math
 from pyspark import SparkContext
 
-
+DEBUG_PRINT = False
+def mprint(*str):
+	if DEBUG_PRINT:
+		print str
 
 
 class Point:
@@ -17,7 +20,7 @@ class Point:
 		return
 
 	def __repr__(self):
-		return "[id:{},rD:{},cD:{},optId:{},notC:{},chk:{}],\n"\
+		return "[id:{},rD:{},cD:{},optId:{},notC:{},chk:{}]\n"\
 		.format(self.id,self.reachDis,self.coreDis,self.opticsId,self.notCore,self.processed)
 
 class OPTICS:
@@ -39,48 +42,67 @@ class OPTICS:
 		pt= Point(id)
 		return pt
 
-	def updatePoint(self,point,IsCore,hasNeighbor,id,coreDis,opticsId):
-		#print point
+	def updatePoint(self,point,IsCore,hasNeighbor,ID,coreDis,opticsId):
+		#mprint (point)
 		if IsCore:
-			if point[0].id == id :
+			mprint( "13")
+			if point[0].id == ID :
 				point[0].coreDis = coreDis
 				point[0].opticsId = opticsId
 				point[0].processed = True
-		
-			if point[1]<=self.RADIUS.value and (not point[0].id == id) and (not point[0].processed):
+			
+			if point[1]<=self.RADIUS.value and (not point[0].id == ID) and (not point[0].processed):
+				mprint ("14")
 				if point[1] < coreDis:
+					mprint ("15")
 					point[0].reachDis = min(point[0].reachDis,coreDis)
 				else:
+					mprint ("16")
 					point[0].reachDis = min(point[0].reachDis,point[1])
 				point[0].opticsId = opticsId + 1
+			mprint ("17")
 		else:
-			if point.id == id :
+			mprint ("18")
+			if point[0].id == ID :
 				point[0].notCore = True
+				mprint ("19")
 				if hasNeighbor :
 					point[0].opticsId = opticsId
 					point[0].processed = True
-			if hasNeighbor and point[0].opticsId == opticsId and (not point[0].processed) and (not point[0].id == id):
+				mprint ("20")
+			if hasNeighbor and point[0].opticsId == opticsId and (not point[0].processed) and (not point[0].id == ID):
 				point[0].opticsId = opticsId +1
-		#print "!!!!!!point:{}".format(point)
+			mprint ("21")
+		#mprint "!!!!!!point:{}".format(point)
 		return point[0]
 
-	def update(self,pointsInClass,distances,id,opticsId,hasNeighbor = False):
+	def update(self,pointsInClass,distances,ID,opticsId,hasNeighbor = False):
+
 		neiNum  = distances.filter( lambda x : x <= self.RADIUS.value).count()
-		#print "neiNum:{}".format(neiNum)
-		#print self.MIN_PTS_NUM.value
-
+		mprint ("neiNum:{}".format(neiNum))
+		mprint (self.MIN_PTS_NUM.value)
+		mprint ("8")
 		points_ = pointsInClass
-		#print points_.take(5)
+		#mprint points_.take(5)
 		pointsT = pointsInClass.zip(distances)
-		if neiNum > self.MIN_PTS_NUM.value:
+		mprint ("9")
+		if neiNum >= self.MIN_PTS_NUM.value:
 			coreNei = distances.takeOrdered(self.MIN_PTS_NUM.value+1)#since there is 0 in the distance rdd, so plus 1
+			mprint ("10")
 			coreDis = coreNei[self.MIN_PTS_NUM.value]
-			points_ = pointsT.map(lambda p :self.updatePoint(p,True,hasNeighbor,id,coreDis,opticsId))
+			mprint ("11")
+			points_ = pointsT.map(lambda p :self.updatePoint(p,True,hasNeighbor,ID,coreDis,opticsId))
 		else:
-			points_ = pointsT.map(lambda p :self.updatePoint(p,False,hasNeighbor,id,coreDis,opticsId))
-		#print points_.take(5)
-		points_.cache()
+			mprint ("12")
+			#mprint hasNeighbor," ",ID," ",coreDis," ",opticsId
+			mprint (pointsT)
 
+			points_ = pointsT.map(lambda p :self.updatePoint(p,False,hasNeighbor,ID,sys.maxint,opticsId))
+		#mprint points_.take(5)
+		
+		
+		points_.cache()
+		mprint ("update Points")
 		return points_ , (neiNum>self.MIN_PTS_NUM.value | hasNeighbor)
 
 
@@ -88,38 +110,56 @@ class OPTICS:
 	#pointsInClass : points_
 	#curPoint : point
 	def run(self,points):
-		print "	MIN_PTS_NUM :{} RADIUS :{}".format(self.MIN_PTS_NUM.value,self.RADIUS.value)
+		mprint ("	MIN_PTS_NUM :{} RADIUS :{}".format(self.MIN_PTS_NUM.value,self.RADIUS.value))
 
 		pointsWithIndex = points.zipWithIndex()
-		#print pointsWithIndex.top(10)
+		mprint (pointsWithIndex.top(20))
 		pointsInClass = pointsWithIndex.map(lambda p:self.createPoint(p[1]))
-		#print pointsInClass.top(10)
+		#mprint pointsInClass.top(10)
 		opticsId = 0
+		mprint ("1")
 		points.persist()
+		mprint ("2")
 		pointsWithIndex.persist()
+		mprint ("3")
 		pointsInClass.persist()
+		mprint ("4")
 		while pointsInClass.filter(lambda p:(not p.processed) and (not p.notCore)).count()>0 :
 			hasOut = True
 			curPoint = pointsInClass.filter(lambda p:(not p.processed) and (not p.notCore)).first()
+			mprint ("5")
 			point = pointsWithIndex.filter(lambda p:p[1]==curPoint.id).first()[0]
-			#print curPoint
+			mprint ("6")
+			#mprint curPoint
 			distances = points.map(lambda p : self.getDistances(p,point))
-			#print distances
+			mprint ("7")
+			#mprint distances
 			temp     = self.update(pointsInClass, distances, curPoint.id, opticsId)
+			mprint ("8")
 			pointsInClass = temp[0]
 			hasOut       = temp[1]
 			if hasOut:
 				opticsId  += 1
-			while  pointsInClass.filter( lambda p : p.opticsId == opticsId).count() > 0 :
+			while True:  
+				neigh = pointsInClass.filter( lambda p : p.opticsId == opticsId and (not p.processed))
+				neigh_cnt = neigh.count()
+				if neigh_cnt<=0:
+					break
+				mprint ("optId:",opticsId)
+				mprint ("9")
 				hasNeighbor = True
-				#print pointsInClass.take(5)
-				curPoint    = pointsInClass.filter(lambda p:(not p.processed) and ( p.opticsId == opticsId)).sortBy(lambda p : p.reachDis).first()
+				mprint (pointsInClass.take(5))
+				curPoint    = neigh.sortBy(lambda p : p.reachDis).first()
+				mprint ("10")
 				point = pointsWithIndex.filter(lambda p:p[1]==curPoint.id).first()[0]
-				#print curPoint
+				mprint ("11")
+				#mprint curPoint
 				distances = points.map(lambda p : self.getDistances(p,point))
-				#print distances
+				mprint ("12")
+				#mprint distances
 				pointsInClass   = self.update(pointsInClass, distances, curPoint.id, opticsId,hasNeighbor)[0]
+				mprint ("13")
 				opticsId   += 1
-
-		return pointsInClass
+		mprint ("optics done")
+		return pointsInClass.sortBy(lambda x:x.opticsId)
 		
