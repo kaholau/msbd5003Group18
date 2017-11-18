@@ -1,6 +1,7 @@
 import sys
 import math
 from pyspark import SparkContext
+from itertools import *
 
 DEBUG_PRINT = False
 
@@ -196,10 +197,12 @@ class OPTICS:
         if len(lbn) > 0:
             lb.append(lbn)
 
+        flat = list(chain.from_iterable(lb))
+
         print "--------------"
-        print lb
+        print flat
         print "--------------"
 
-        return (flag, lb)
+        return (flag, flat)
 
 
