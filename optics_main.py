@@ -33,7 +33,7 @@ sc.setLogLevel("ERROR")
 source = [[15.0,16.0],[50.0,55.0]]
 numOfpt = 50
 deviationFromPoint = 10
-
+random.seed(11111111)
 points = get_random_point(source,numOfpt,deviationFromPoint)
 #points =[[17.0, 21.0], [8.0, 25.0], [8.0, 18.0], [22.0, 23.0], [9.0, 25.0], [15.0, 7.0], [14.0, 10.0], [18.0, 13.0], [15.0, 20.0], [14.0, 7.0], [47.0, 46.0], [49.0, 63.0], [55.0, 53.0], [57.0, 49.0], [41.0, 46.0], [54.0, 47.0], [45.0, 60.0], [58.0, 46.0], [50.0, 57.0], [57.0, 64.0]]
 #this one gives good looking figures
@@ -42,7 +42,7 @@ points = get_random_point(source,numOfpt,deviationFromPoint)
 rdd = sc.parallelize(points, 2).cache()
 print "\nThe original points:\n",points
 MIN_PTS_NUM = sc.broadcast(4)
-RADIUS = sc.broadcast(8)
+RADIUS = sc.broadcast(10)
 op = optics.OPTICS(MIN_PTS_NUM,RADIUS)
 
 # result is a rdd of Point Class Object sorted base of opticId
