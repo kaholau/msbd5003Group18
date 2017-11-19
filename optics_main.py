@@ -13,8 +13,17 @@ from pyspark.sql import Row
 def get_random_point(source,numOfpt,deviationFromPoint):
 	points =[]
 	dev=float(deviationFromPoint)
-	
-	for pt in range(numOfpt/2):
+	if numOfpt>=100:
+		pts_x = sum([p[0] for p in source])
+		pts_y = sum([p[1] for p in source])
+		center_n = [pts_x/len(source),pts_y/len(source)]
+		dev_n = max([math.sqrt((s[0]-center_n[0])**2+(s[1]-center_n[1])**2) for s in source])
+		for pt in range(int(numOfpt*0.2)):
+			points.append([center_n[i] + (-1 if random.random()>0.5 else 1)\
+		  	*int(random.random() * dev_n*3) for i in range(len(center_n))])
+		numOfpt = numOfpt*0.8
+
+	for pt in range(int(numOfpt/2)):
 		for center in source:
 			  points.append([center[i] + (-1 if random.random()>0.5 else 1)\
 		  	*int(random.random() * dev) for i in range(len(center))])
@@ -52,19 +61,22 @@ flag, lb = op.getCluter(result, 9)
 #print "\nSome Pionts object:\n",result.take(10)
 
 
-
-
-
 #below is for plotting only
 pt_new = []
 pt_c = []
 with open("./optics_result.csv","w") as rfile:
-	rfile.write("Pid,OPTid,Px,Py,rD,cD,cluster,\n")
+	rfile.write("Pid,OPTid,Px,Py,rD,cD,cluster,isCore\n")
 	for p in lb:
-		rfile.write("{},{},{},{},{},{},{},\n"\
-			.format(p.id,p.opticsId,points[p.id][0],points[p.id][1],p.reachDis,p.coreDis,p.flag))
+		rfile.write("{},{},{},{},{},{},{},{}\n"\
+			.format(p.id,p.opticsId,points[p.id][0],points[p.id][1],p.reachDis,p.coreDis,p.flag,p.notCore))
 		pt_new.append(points[p.id])
-		pt_c.append(float(p.flag)/99.0)
+		pt_c.append(float(p.flag))
+color = []
+for c in pt_c:
+	if not (c in color):
+		color.append(c)
+color_n =float(len(color)+1)
+pt_c = [c/color_n if c <99 else 1 for c in pt_c ]
 print pt_new
 print pt_c
 plot_point(pt_new,pt_c)

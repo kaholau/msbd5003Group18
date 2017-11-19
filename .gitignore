@@ -1,2 +1,4 @@
 /optics3.py
 *.pyc
+/.~lock.optics_result.csv#
+/optics.pyc
