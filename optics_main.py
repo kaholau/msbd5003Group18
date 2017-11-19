@@ -13,16 +13,17 @@ from pyspark.sql import Row
 def get_random_point(source,numOfpt,deviationFromPoint):
 	points =[]
 	dev=float(deviationFromPoint)
-	for center in source:
-		for pt in range(numOfpt):
-		  points.append([center[i] + (-1 if random.random()>0.5 else 1)\
+	
+	for pt in range(numOfpt/2):
+		for center in source:
+			  points.append([center[i] + (-1 if random.random()>0.5 else 1)\
 		  	*int(random.random() * dev) for i in range(len(center))])
 	return points
 
-def plot_point(points):
+def plot_point(points,color):
 	pts_x = np.array([x[0] for x in points])
 	pts_y = np.array([y[1] for y in points])
-	plt.scatter(pts_x, pts_y)
+	plt.scatter(pts_x, pts_y,c=color)
 
 	return
 
@@ -30,8 +31,8 @@ def plot_point(points):
 
 sc=SparkContext()
 sc.setLogLevel("ERROR")
-source = [[15.0,16.0],[50.0,55.0]]
-numOfpt = 50
+source = [[25.0,30.0],[45.0,55.0]]
+numOfpt = 10
 deviationFromPoint = 10
 random.seed(11111111)
 points = get_random_point(source,numOfpt,deviationFromPoint)
@@ -42,20 +43,31 @@ points = get_random_point(source,numOfpt,deviationFromPoint)
 rdd = sc.parallelize(points, 2).cache()
 print "\nThe original points:\n",points
 MIN_PTS_NUM = sc.broadcast(4)
-RADIUS = sc.broadcast(10)
+RADIUS = sc.broadcast(9)
 op = optics.OPTICS(MIN_PTS_NUM,RADIUS)
 
 # result is a rdd of Point Class Object sorted base of opticId
 result  = op.run(rdd)
-flag, lb = op.getCluter(result, 10)
-print "\nSome Pionts object:\n",result.take(10)
+flag, lb = op.getCluter(result, 9)
+#print "\nSome Pionts object:\n",result.take(10)
 
 
 
 
 
 #below is for plotting only
-plot_point(points)
+pt_new = []
+pt_c = []
+with open("./optics_result.csv","w") as rfile:
+	rfile.write("Pid,OPTid,Px,Py,rD,cD,cluster,\n")
+	for p in lb:
+		rfile.write("{},{},{},{},{},{},{},\n"\
+			.format(p.id,p.opticsId,points[p.id][0],points[p.id][1],p.reachDis,p.coreDis,p.flag))
+		pt_new.append(points[p.id])
+		pt_c.append(float(p.flag)/99.0)
+print pt_new
+print pt_c
+plot_point(pt_new,pt_c)
 plt.figure()
 
 op_rDis = result.map(lambda p: p.reachDis \

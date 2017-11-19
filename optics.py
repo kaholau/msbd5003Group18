@@ -93,8 +93,7 @@ class OPTICS:
         pointsT = pointsInClass.zip(distances)
         mprint("9")
         if neiNum >= self.MIN_PTS_NUM.value:
-            coreNei = distances.takeOrdered(
-                self.MIN_PTS_NUM.value + 1)  # since there is 0 in the distance rdd, so plus 1
+            coreNei = distances.takeOrdered(self.MIN_PTS_NUM.value + 1)  # since there is 0 in the distance rdd, so plus 1
             mprint("10")
             coreDis = coreNei[self.MIN_PTS_NUM.value]
             mprint("11")
@@ -179,7 +178,7 @@ class OPTICS:
             if result.reachDis > r:
                 if result.coreDis > r:
                     noise += 1
-                    result.flag = -1
+                    result.flag = 99
                     lbn.append(result)
                 else:
                     flag += 1
