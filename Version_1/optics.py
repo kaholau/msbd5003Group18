@@ -59,12 +59,14 @@ class OPTICS:
 
             if point[1] <= self.RADIUS.value and (not point[0].id == ID) and (not point[0].processed):
                 mprint("14")
+                #point[0].reachDis = min(point[0].reachDis, coreDis,point[1])
                 if point[1] < coreDis:
                     mprint("15")
                     point[0].reachDis = min(point[0].reachDis, coreDis)
                 else:
                     mprint("16")
                     point[0].reachDis = min(point[0].reachDis, point[1])
+                
                 point[0].opticsId = opticsId + 1
             mprint("17")
         else:
@@ -107,6 +109,8 @@ class OPTICS:
         # mprint points_.take(5)
 
 
+        #points_.checkpoint()#for non-local file system
+        #points_.localCheckpoint()
         points_.cache()
         mprint("update Points")
         return points_, (neiNum > self.MIN_PTS_NUM.value | hasNeighbor)
@@ -123,11 +127,11 @@ class OPTICS:
         # mprint pointsInClass.top(10)
         opticsId = 0
         mprint("1")
-        points.persist()
+        points.cache()
         mprint("2")
-        pointsWithIndex.persist()
+        pointsWithIndex.cache()
         mprint("3")
-        pointsInClass.persist()
+        pointsInClass.cache()
         mprint("4")
         while pointsInClass.filter(lambda p: (not p.processed) and (not p.notCore)).count() > 0:
             hasOut = True
@@ -166,7 +170,7 @@ class OPTICS:
                 mprint("13")
                 opticsId += 1
         mprint("optics done")
-        return pointsInClass.sortBy(lambda x: x.opticsId)
+        return pointsInClass.sortBy(lambda x: x.opticsId).collect()
 
     def getCluter(self, results, r):
         noise = 0
@@ -174,7 +178,7 @@ class OPTICS:
         lb = []
         lbn = []
         lb_ = []
-        for result in results.toLocalIterator():
+        for result in results:
             if result.reachDis > r:
                 if result.coreDis > r:
                     noise += 1
