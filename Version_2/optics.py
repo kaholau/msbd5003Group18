@@ -17,8 +17,9 @@ def mprint(*str):
 
 
 class Point:
-    def __init__(self, ID):
-        self.id = ID
+    def __init__(self, localID,globalID,partitionID):
+        self.id = localID
+        self.gid = globalID
         # self.info = info_
         self.reachDis = sys.maxsize # float("inf")
         self.coreDis = sys.maxsize  # float("inf")
@@ -26,7 +27,7 @@ class Point:
         self.opticsId = sys.maxsize  # float("inf")
         self.notCore = False
         self.cluster = 0
-        self.partition =[]
+        self.partition =[partitionID]
         return
 
     def __repr__(self):
@@ -50,8 +51,8 @@ class OPTICS:
             distance += (pp - cc) ** 2
         return math.sqrt(distance)
 
-    def createPoint(self, id):
-        pt = Point(id)
+    def createPoint(self, lid,gid,pid):
+        pt = Point(lid,gid,pid)
         return pt
 
     def updatePoint(self, point, IsCore, hasNeighbor, ID, coreDis, opticsId):

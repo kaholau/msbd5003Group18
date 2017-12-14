@@ -57,10 +57,18 @@ def mean_var_split(partition, k, axis, next_label, mean, variance):
 	"""
 	std_dev = np.sqrt(variance)
 	bounds = np.array([mean + (i - 3) * 0.3 * std_dev for i in xrange(7)])
+	#print bounds
+	#[ 0.50430499  0.60903846  0.71377193  0.8185054   0.92323887  1.02797234  1.1327058 ]
+
+	#print partition.top(10)
+	#((14997, 3), array([ 0.88450848,  0.91605895]))
 	counts = partition.aggregate(np.zeros(7),
 								 lambda x, (_, v):
 								 x + 2 * (v[axis] < bounds) - 1,
 								 add)
+	#print counts
+	#[-1143.  -681.  -181.   243.   621.   941.  1197.]
+
 	counts = np.abs(counts)
 	boundary = bounds[np.argmin(counts)]
 	part1 = partition.filter(lambda (_, v): v[axis] < boundary)
@@ -83,6 +91,7 @@ def min_var_split(partition, k, next_label):
 	Split the given partition into equal sized partitions along the
 	axis with greatest variance.
 	"""
+	#if k = 2, [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]
 	moments = partition.aggregate(np.zeros((3, k)),
 								  lambda x, (keys, vector): x + np.array(
 									  [np.ones(k), vector, vector ** 2]),
@@ -132,6 +141,9 @@ class KDPartitioner(object):
 		self.max_partitions = int(
 			max_partitions) if max_partitions is not None else 4 ** self.k
 		data.cache()
+		#print data.top(10)#(14999, array([ 0.13501912, -0.07964208]))
+		#'total is the result BoundingBox, '_' is the point index, v is the point
+		#create bounding box for each point separatly and than combine them 
 		box = data.aggregate(BoundingBox(k=self.k),
 							 lambda total, (_, v): total.union(BoundingBox(v)),
 							 lambda total, v: total.union(v))
@@ -202,7 +214,7 @@ if __name__ == '__main__':
 	#print X[0:20]
 	sc = ps.SparkContext()
 	test_data = sc.parallelize(enumerate(X))
-	#rint test_data.top(10)
+	#print test_data.top(10)
 	start = time()
 	kdpart = KDPartitioner(test_data, 16, 2)
 	final = kdpart.result.collect()

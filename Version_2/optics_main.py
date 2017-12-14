@@ -60,22 +60,24 @@ def plot_partition(final):
     plt.close()
 
     return
-def create_neighborhoods(data):
+def create_neighborhoods(data,bounding_boxes,eps):
     """
     Expands bounding boxes by 2 * eps and creates neighborhoods of
     items within those boxes with partition ids in key.
     """
+    print 'create_neighborhoods'
     neighbors = {}
     new_data = data.context.emptyRDD()
-    for label, box in self.bounding_boxes.iteritems():
-        expanded_box = box.expand(2 * self.eps)
-        self.expanded_boxes[label] = expanded_box
-        neighbors[label] = self.data.filter(
+    expanded_boxes={}
+    for label, box in bounding_boxes.iteritems():
+        expanded_box = box.expand(2 * eps)
+        expanded_boxes[label] = expanded_box
+        neighbors[label] = data.filter(
             lambda (k, v): expanded_box.contains(v)) \
             .map(lambda (k, v): ((k, label), v))
         new_data = new_data.union(neighbors[label])
-    self.neighbors = neighbors
-    self.data = new_data
+    #print new_data.top(10)#((149, 7), array([ 75.,  72.]))
+    return neighbors, expanded_boxes , new_data
 
 num_Of_Testing_pt = 150
 
@@ -92,46 +94,43 @@ points = np.asarray(points)
 MIN_PTS_NUM = 4
 RADIUS = 15
 
-min_pts_num = MIN_PTS_NUM
-radius = RADIUS
 sc=SparkContext()
 sc.setLogLevel("ERROR") 
 
 print('Start: {:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now()))
 test_data = sc.parallelize(enumerate(points))
 kdpart = partition.KDPartitioner(test_data, 8, 2)
+neighbors, expanded_boxes , new_data = create_neighborhoods(test_data,kdpart.bounding_boxes,RADIUS)
 #final = kdpart.result.collect()
 #plot_partition(final)
-#print test_data.top(10)
-#exit()
+#print test_data.top(10) #(149, array([ 75.,  72.]))
+
 #k is the index in points, p is the parition ID, v is the point
-rdd = test_data.map(lambda ((k, p), v): (p, (k, v))) \
+rdd = new_data.map(lambda ((k, p), v): (p, (k, v))) \
             .partitionBy(len(kdpart.partitions)) \
-#print ("\nThe original points:\n",points)
+            .map(lambda (p, (k, v)):((k, p), v) ).cache()
+#print rdd.top(10)
+params = {'min_pts_num':MIN_PTS_NUM,'radius':RADIUS}
 
-min_pts_num = sc.broadcast(MIN_PTS_NUM)
-radius = sc.broadcast(RADIUS)
-
-def optics_do(index,iterator):
+def optics_do(iterator,params):
     pt_obj_list = []
     points = []
-    for i in iterator:
-        pt_obj = optics.Point(i[1][0],i[0])
-        pt_obj_list.append(pt_obj)
-        points.append(i[1][1])
-    op = optics.OPTICS(min_pts_num.value,radius.value)
-    result = op.run(partition, pt_obj_list,points)
-    for p in result:
-        p.id = OFFSET.value[index]+p.id
-    numOfcluster, lb = op.getCluter(index*20,result, 6.5)
+
+    for l,i in enumerate(iterator):
+        pt_obj_list.append( optics.Point(l,i[0][0],i[0][1]))
+        points.append( i[1])
+    op = optics.OPTICS(params['min_pts_num'],params['radius'])
+    result = op.run(pt_obj_list,points)
+    #for p in result:
+    #    p.id = OFFSET.value[index]+p.id
+    numOfcluster, lb = op.getCluter(0,result, 6.5)
     print numOfcluster
     yield lb
+
+lb = rdd.mapPartitions(lambda iterable: optics_do(iterable,params)).collect()
+for l in lb:
+    print l
 exit()
-rdd = rdd.mapPartitionsWithIndex(optics_do).cache()
-
-lb= rdd.flatMap(lambda x:x).collect()
-
-#print points
 
 # result is a rdd of Point Class Object sorted base of opticId
 
