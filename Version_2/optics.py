@@ -27,7 +27,7 @@ class Point:
         self.opticsId = sys.maxsize  # float("inf")
         self.notCore = False
         self.cluster = 0
-        self.partition =[partitionID]
+        self.pid =partitionID
         return
 
     def __repr__(self):
@@ -159,17 +159,18 @@ class OPTICS:
         return sorted(pointsInClass, key = lambda x: x.opticsId, reverse=False)
 
 
-    def getCluter(self, offset,results, r):
-        noise = 0
+    def getCluter(self, results, radius,offset=0):
+        #noise = 0
         cluster = offset
         lb = []
         lbn = []
         lb_ = []
+        r = radius
         for result in results:
             if result.reachDis > r:
                 if result.coreDis > r:
-                    noise += 1
-                    result.cluster = sys.maxsize
+                    #noise += 1
+                    result.cluster = -1
                     lbn.append(result)
                 else:
                     cluster += 1
@@ -189,9 +190,9 @@ class OPTICS:
 
         flat = list(chain.from_iterable(lb))
         numOfcluster = cluster-offset
-        print ("--------------")
+       #print ("--------------")
         #print (flat)
-        print ("--------------")
+        #print ("--------------")
 
         return (numOfcluster, flat)
 
