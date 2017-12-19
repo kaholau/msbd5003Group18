@@ -11,10 +11,9 @@ from time import gmtime, strftime
 import datetime
 import optics_parallel
 
-
 def get_random_point(source,numOfpt,dev):
     points =[]
-    noise_portion = 0.2
+    noise_portion = 0
     if numOfpt>=50:
         pts_x = sum([p[0] for p in source])
         pts_y = sum([p[1] for p in source])
@@ -30,7 +29,7 @@ def get_random_point(source,numOfpt,dev):
               points.append([center[i] + (-1 if random.random()>0.5 else 1)\
             *int(random.random() * dev[i]) for i in range(len(center))])
     return points
-
+'''
 def plot_point(points,color):
     pts_x = np.array([x[0] for x in points])
     pts_y = np.array([y[1] for y in points])
@@ -59,28 +58,33 @@ def plot_partition(final):
     plt.close()
 
     return
+'''
 
+num_Of_Testing_pt = 1500
 
-num_Of_Testing_pt = 150
+#Testing_pt_centers = [[40.0,25.0],[60.0,25.0],[25.0,75.0],[75.0,75.0]]
+#Testing_pt_centers_dev = [8.0,8.0,15.0,20.0]
 
-Testing_pt_centers = [[40.0,25.0],[60.0,25.0],[25.0,75.0],[75.0,75.0]]
-Testing_pt_centers_dev = [8.0,8.0,15.0,20.0]
+Testing_pt_centers = [[250.0,250.0],[750.0,750.0]]
+Testing_pt_centers_dev = [40.0,40.0]
 
 deviation_From_Testing_Center = max(Testing_pt_centers_dev)
 random.seed(11111111)
 points = get_random_point(Testing_pt_centers,num_Of_Testing_pt,Testing_pt_centers_dev)
 MIN_PTS_NUM = 4
-RADIUS = 15
-
+RADIUS = 5
+#for p in points:
+#    print p
 print('Start: {:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now()))
 points = np.asarray(points)
 # result is a list of Point Class Object sorted base of opticId
-clusters,data,bounding_boxes,expanded_boxes = optics_parallel.run(points, MIN_PTS_NUM,RADIUS)
+clusters,data,bounding_boxes,expanded_boxes,object_result = optics_parallel.run(points, MIN_PTS_NUM,RADIUS)
 
 print('Complete: {:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now()))
 #below is for generating csv, plotting and save the figure only
 #print clusters
 #print data 
+print clusters
 colors = cm.spectral(np.linspace(0, 1, len(bounding_boxes)))
 if not os.access('plots', os.F_OK):
     os.mkdir('plots')
@@ -90,6 +94,7 @@ lim2 = 100
 #print X
 size = (10,10)
 for i, t in enumerate(data):
+    #print t
     x = [X[t2[0]][0] for t2 in t]
     y = [X[t2[0]][1] for t2 in t]
     c = [int(t2[1].split(':')[1].strip('*')) for t2 in t]
@@ -132,17 +137,24 @@ plt.xlim(-lim1, lim2)
 plt.ylim(-lim1, lim2)
 plt.savefig('plots/clusters_partitions.png')
 plt.close()
+dev = deviation_From_Testing_Center
+op_rDis = [p.reachDis if p.reachDis <float(dev)*2 else float(dev)*2 for p in object_result ]
+
+op_np = np.array(op_rDis)
+plt.bar(xrange(op_np.size), op_np)
+plt.savefig("./figure/figure_m{}_e{}_s{}_2_{}".format(MIN_PTS_NUM,RADIUS,num_Of_Testing_pt,strftime("%Y%m%d%H%M%S", gmtime())))
+plt.close()
 
 
-'''pt_new = []
+pt_new = []
 pt_c = []
 with open("./figure/optics_result_{}.csv".format(strftime("%Y%m%d%H%M%S", gmtime())),"w") as rfile:
     rfile.write("Pid,OPTid,Px,Py,rD,cD,cluster,notCore\n")
-    for p in lb:
+    for p in object_result:
         rfile.write("{},{},{},{},{},{},{},{}\n"\
             .format(p.id,p.opticsId,points[p.id][0],points[p.id][1],p.reachDis,p.coreDis,p.cluster,p.notCore))
-        pt_new.append(points[p.id])
-        pt_c.append(float(p.cluster))
+
+'''
 color = []
 for c in pt_c:
     if not (c in color):

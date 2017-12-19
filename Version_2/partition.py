@@ -5,31 +5,6 @@ import numpy as np
 import pyspark as ps
 
 
-def median_search_split(partition, axis, next_part):
-	"""
-	:type partition: pyspark.RDD
-	:param partition: pyspark RDD ((key, partition label) , k-dim
-		vector like)
-	:type axis: int
-	:param axis: axis to split on
-	:type next_part: int
-	:param next_part: next partition label
-	:return: part1, part2, median: part1 and part2 are RDDs with the
-		same structure as partition, where the split was made
-	:rtype: pyspark.RDD, pyspark.RDD, float
-	Split the given partition into equal sized partitions along the
-	given axis.
-	"""
-	sorted_values = partition.map(lambda ((k, p), v): v[axis]).sortBy(
-		lambda v: v).collect()
-	median = sorted_values[
-		len(sorted_values) / 2]  # need a better way to find the median
-	part1 = partition.filter(lambda ((k, p), v): v[axis] < median)
-	part2 = partition.filter(lambda ((k, p), v): v[axis] >= median).map(
-		lambda ((k, p), v): ((k, next_part), v))
-	return part1, part2, median
-
-
 def mean_var_split(partition, k, axis, next_label, mean, variance):
 	"""
 	:type partition: pyspark.RDD
@@ -173,14 +148,7 @@ class KDPartitioner(object):
 				current_label = todo_q.get()
 				current_partition = self.partitions[current_label]
 				current_box = self.bounding_boxes[current_label]
-				if self.split_method == 'min_var':
-					(part1, part2, median), current_axis = min_var_split(
-						current_partition, self.k, next_label)
-				else:
-					part1, part2, median = median_search_split(
-						current_partition,
-						current_axis,
-						next_label)
+				(part1, part2, median), current_axis = min_var_split(current_partition, self.k, next_label)
 				box1, box2 = current_box.split(current_axis, median)
 				self.partitions[current_label] = part1
 				self.partitions[next_label] = part2

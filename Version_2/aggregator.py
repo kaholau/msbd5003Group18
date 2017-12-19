@@ -37,7 +37,7 @@ class ClusterAggregator(object):
             new_ids = set(pl_ids)
             # check if this point is noise
             first = next(iter(new_ids))
-            if '-1' not in first and '*' not in first:
+            if ('-1' not in first) and ('*' not in first):
                 global_id = self.next_global_id
                 for new_id in new_ids:
                     # check if partition level label already recorded
@@ -61,6 +61,7 @@ class ClusterAggregator(object):
                 # insert new cluster labels
                 for new_id in new_ids:
                     self[new_id] = global_id
+                #print new_ids,':',global_id
         return self
 
     def __setitem__(self, a, b):

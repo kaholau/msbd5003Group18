@@ -27,7 +27,7 @@ class Point:
         self.opticsId = sys.maxsize  # float("inf")
         self.notCore = False
         self.cluster = 0
-        self.pid =partitionID
+        self.parti_id =partitionID
         return
 
     def __repr__(self):
