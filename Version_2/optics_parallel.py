@@ -71,8 +71,9 @@ def remap_cluster_ids(data):
     Scans through the data for collisions in cluster ids, creating
     a mapping from partition level clusters to global clusters.
     """
+
     labeled_points = data.map(lambda x:x[0])
-    object_points = data.map(lambda x:x[1]).groupByKey().map(lambda x:(x[0],list(x[1])[0])).cache()
+    object_points = data.map(lambda x:x[1]).groupByKey().map(lambda x:(x[0],min(list(x[1]),key = (lambda x:x.reachDis)))).cache()
     labeled_points = labeled_points.groupByKey()
     labeled_points.cache()
     #test = labeled_points.map(lambda x:(x[0],list(x[1]))).sortByKey().collect()

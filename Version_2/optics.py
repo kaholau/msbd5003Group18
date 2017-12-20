@@ -14,17 +14,18 @@ def natural_sort(l):
 def mprint(*str):
     if DEBUG_PRINT:
         print (str)
-
-
+def default():
+    #return sys.maxsize
+    return 1000
 class Point:
     def __init__(self, localID,globalID,partitionID):
         self.id = localID
         self.gid = globalID
         # self.info = info_
-        self.reachDis = sys.maxsize # float("inf")
-        self.coreDis = sys.maxsize  # float("inf")
+        self.reachDis = default() # float("inf")
+        self.coreDis = default() # float("inf")
         self.processed = False
-        self.opticsId = sys.maxsize  # float("inf")
+        self.opticsId = default()  # float("inf")
         self.notCore = False
         self.cluster = 0
         self.parti_id =partitionID
@@ -109,7 +110,7 @@ class OPTICS:
             # mprint hasNeighbor," ",ID," ",coreDis," ",opticsId
             mprint(pointsT)
 
-            points_ = list(map(lambda p: self.updatePoint(p, False, hasNeighbor, ID, sys.maxsize, opticsId), pointsT))
+            points_ = list(map(lambda p: self.updatePoint(p, False, hasNeighbor, ID, default(), opticsId), pointsT))
         # mprint points_.take(5)
 
 
