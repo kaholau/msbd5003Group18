@@ -62,6 +62,7 @@ def map_object_cluster_id(p_obj, broadcast_dict):
     cluster_dict = broadcast_dict.value
 
     if '-1' not in cluster_id and cluster_id in cluster_dict:
+        p_obj.cluster=cluster_dict[cluster_id]
         return (cluster_dict[cluster_id],p_obj.parti_id,p_obj.opticsId),p_obj
     else:
         return (sys.maxsize,p_obj.parti_id,p_obj.opticsId),p_obj

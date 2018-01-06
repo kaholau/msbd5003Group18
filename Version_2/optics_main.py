@@ -60,21 +60,21 @@ def plot_partition(final):
     return
 '''
 
-num_Of_Testing_pt = 500
+num_Of_Testing_pt = 1500
 
-#Testing_pt_centers = [[40.0,25.0],[60.0,25.0],[25.0,75.0],[75.0,75.0]]
-#Testing_pt_centers_dev = [8.0,8.0,15.0,20.0]
+Testing_pt_centers = [[400.0,250.0],[600.0,250.0],[250.0,550.0],[550.0,550.0]]
+Testing_pt_centers_dev = [80.0,80.0,150.0,200.0]
 
-Testing_pt_centers = [[250.0,250.0],[750.0,750.0]]
-Testing_pt_centers_dev = [100.0,100.0]
+#Testing_pt_centers = [[250.0,250.0],[750.0,750.0]]
+#Testing_pt_centers_dev = [100.0,100.0]
 
-deviation_From_Testing_Center = max(Testing_pt_centers_dev)
+
 random.seed(11111111)
 points = get_random_point(Testing_pt_centers,num_Of_Testing_pt,Testing_pt_centers_dev)
 MIN_PTS_NUM = 4
-RADIUS = 5
-
-if True:
+RADIUS = 17
+deviation_From_Testing_Center = RADIUS*2
+if False:
     model = op.OPTICS(MIN_PTS_NUM,RADIUS)
     obj_list = [model.createPoint(i,0,0) for i in range(len(points))]
     object_result = model.run(obj_list,points)
@@ -98,7 +98,7 @@ else:
         os.mkdir('plots')
     X = points
     lim1 = 0
-    lim2 = 1500
+    lim2 = 800
     #print X
     size = (10,10)
     for i, t in enumerate(data):
@@ -146,8 +146,10 @@ else:
     plt.savefig('plots/clusters_partitions.png')
     plt.close()
 
+model = op.OPTICS(MIN_PTS_NUM,13)
+_, object_result = model.getCluter(object_result,20)
 dev = deviation_From_Testing_Center
-op_rDis = [p.reachDis if p.reachDis <float(dev)*2 else float(dev)*2 for p in object_result ]
+op_rDis = [min(p.reachDis,p.coreDis) if min(p.reachDis,p.coreDis) <float(dev)*2 else float(dev)*2 for p in object_result ]
 
 op_np = np.array(op_rDis)
 plt.bar(xrange(op_np.size), op_np)
@@ -158,11 +160,12 @@ plt.close()
 
 pt_new = []
 pt_c = []
+
 with open("./figure/optics_result_{}.csv".format(strftime("%Y%m%d%H%M%S", gmtime())),"w") as rfile:
-    rfile.write("Pid,OPTid,Px,Py,rD,cD,cluster,notCore\n")
+    rfile.write("Pid,OPTid,Px,Py,rD,cD,cluster,notCore,minD\n")
     for p in object_result:
-        rfile.write("{},{},{},{},{},{},{},{}\n"\
-            .format(p.id,p.opticsId,points[p.id][0],points[p.id][1],p.reachDis,p.coreDis,p.cluster,p.notCore))
+        rfile.write("{},{},{},{},{},{},{},{},{}\n"\
+            .format(p.id,p.opticsId,points[p.id][0],points[p.id][1],p.reachDis,p.coreDis,p.cluster,p.notCore,min(p.reachDis,p.coreDis)))
 
 '''
 color = []
